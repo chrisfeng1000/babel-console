@@ -47,7 +47,15 @@ table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;p
 .muted{color:#6b7686;font-size:12px}
 .refresh{float:right;font-size:12px;color:#6b7686;cursor:pointer;background:transparent;border:0}
 .xbtn{padding:2px 9px;border:1px solid #5a2a2a;background:#2a1414;color:#ffb4b4;border-radius:6px;font-size:12px;cursor:pointer}
-.ibtn{padding:2px 9px;border:1px solid #2a3140;background:#1c2230;color:#9db4d6;border-radius:6px;font-size:12px;cursor:pointer}
+.ibtn{padding:4px 11px;border:1px solid #2a3140;background:#1c2230;color:#9db4d6;border-radius:7px;font-size:13px;cursor:pointer}
+.card{box-shadow:0 1px 4px rgba(0,0,0,.25)}
+#todo-in{flex:1;padding:9px 11px;border-radius:8px;border:1px solid #2a3140;background:#0f1115;color:#e6e6e6;font:inherit}
+.todoitem{display:flex;align-items:center;gap:11px;padding:9px 2px;border-bottom:1px solid #1c2230}
+.todoitem:last-child{border:0}
+.chk{width:21px;height:21px;border:1.5px solid #3a4454;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#4ad66d;font-size:13px;flex-shrink:0}
+.chk.on{background:#133a1f;border-color:#2b6a3c}
+.ttext{flex:1;word-break:break-word}.ttext.done{color:#6b7686;text-decoration:line-through}
+.del{color:#5a6472;cursor:pointer;font-size:14px;padding:0 4px}.del:active{color:#ffb4b4}
 pre.detail{white-space:pre-wrap;font:12px/1.4 ui-monospace,monospace;color:#9db;background:#0f1115;border:1px solid #2a3140;border-radius:6px;padding:8px;margin:6px 0 0;max-height:240px;overflow:auto}
 @media(max-width:760px){
   #mtop{display:flex}
@@ -63,6 +71,7 @@ pre.detail{white-space:pre-wrap;font:12px/1.4 ui-monospace,monospace;color:#9db;
     <h1><span class="dot" id="dot"></span>Babel 控制台 <span id="sub" class="muted" style="margin-left:auto"></span></h1>
     <nav>
       <button data-v="chat" class="on">💬 对话(主控)</button>
+      <button data-v="todo">📋 待办 / 今日</button>
       <button data-v="fix">🛠 网页维修助手</button>
       <button data-v="status">📊 Babel 状态</button>
       <button data-v="reports">📄 报告</button>
@@ -78,6 +87,13 @@ pre.detail{white-space:pre-wrap;font:12px/1.4 ui-monospace,monospace;color:#9db;
       <div class="bar"><textarea id="box-fix" placeholder="网页有问题或想加功能?告诉维修助手…(Enter 发送)"></textarea><button id="send-fix">发送</button></div></div>
     <div class="view" id="v-status"><div class="pane" id="pane-status"><div class="muted">加载中…</div></div></div>
     <div class="view" id="v-reports"><div class="pane" id="pane-reports"><div class="muted">加载中…</div></div></div>
+    <div class="view" id="v-todo"><div class="pane">
+      <div class="card"><h3>今日待办 <button class="refresh" onclick="loadTodos()">↻ 刷新</button></h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px"><input id="todo-in" placeholder="加一条待办,回车…"><button class="ibtn" onclick="addTodo()">加</button></div>
+        <div id="todo-list"><div class="muted">加载中…</div></div></div>
+      <div class="card"><h3>最近邮件活动</h3><div id="mail-list" class="muted">加载中…</div></div>
+      <div class="card"><h3>融合来源</h3><div class="muted">邮件活动已接入(上方)。Slack 待接入:给我一个 Slack 的 incoming-webhook URL 或 bot token,我就把 Slack 消息也融进这里。你在对话里随口说"记一下 X",主控也会自动加进待办。</div></div>
+    </div></div>
   </main>
 </div>
 <script>
@@ -159,6 +175,19 @@ async function loadReports(){if(!BACKEND)return;const pane=document.getElementBy
     (d.reports||[]).forEach(rp=>{h+='<div class="card"><h3>'+esc(rp.name)+'</h3><pre class="detail">'+esc(rp.text)+'</pre></div>'});
     if(!(d.reports||[]).length)h+='<div class="muted">暂无报告</div>';pane.innerHTML=h
   }catch(e){pane.innerHTML='<div class="msg err">拿报告失败</div>'}}
+async function loadTodos(){if(!BACKEND)return;const box=document.getElementById('todo-list');
+  try{const d=await(await fetch(api('/api/todos'),{cache:'no-store'})).json();box.innerHTML='';
+    if(!d.todos||!d.todos.length){box.innerHTML='<div class="muted">还没有待办。上面加一条,或在"对话"里跟我说"记一下…"</div>'}
+    (d.todos||[]).forEach(t=>{const r=el('todoitem',null,box);r.innerHTML='<span class="chk'+(t.done?' on':'')+'">'+(t.done?'✓':'')+'</span><span class="ttext'+(t.done?' done':'')+'">'+esc(t.text)+'</span><span class="del">✕</span>';
+      r.querySelector('.chk').onclick=()=>toggleTodo(t.id);r.querySelector('.del').onclick=()=>delTodo(t.id)});
+    loadMail();
+  }catch(e){box.innerHTML='<div class="msg err">拿待办失败</div>'}}
+async function addTodo(){const inp=document.getElementById('todo-in');const t=inp.value.trim();if(!t||!BACKEND)return;inp.value='';try{await fetch(api('/api/todo/add?text='+encodeURIComponent(t)))}catch(e){}loadTodos()}
+async function toggleTodo(id){try{await fetch(api('/api/todo/toggle?id='+id))}catch(e){}loadTodos()}
+async function delTodo(id){try{await fetch(api('/api/todo/del?id='+id))}catch(e){}loadTodos()}
+async function loadMail(){const box=document.getElementById('mail-list');if(!box||!BACKEND)return;
+  try{const d=await(await fetch(api('/api/mail'),{cache:'no-store'})).json();
+    box.innerHTML=(d.lines||[]).slice().reverse().map(l=>'<div style="font-size:12px;padding:3px 0;border-bottom:1px solid #1c2230;color:#9aa6b5">'+esc(l)+'</div>').join('')||'<span class="muted">无</span>'}catch(e){}}
 
 // 导航 + 移动抽屉
 const side=document.getElementById('side'),backdrop=document.getElementById('backdrop');
@@ -168,9 +197,10 @@ backdrop.onclick=closeDrawer;
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
   const v=b.dataset.v;document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.getElementById('v-'+v).classList.add('on');
-  if(v==='status')loadStatus();if(v==='reports')loadReports();closeDrawer()});
+  if(v==='status')loadStatus();if(v==='reports')loadReports();if(v==='todo')loadTodos();closeDrawer()});
 
 (async()=>{await resolveBackend();makeChat('log-main','box-main','send-main','main');makeChat('log-fix','box-fix','send-fix','maintain');
+  document.getElementById('todo-in').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addTodo()}});
   loadTasks();setInterval(loadTasks,15000);
   setInterval(resolveBackend,25000); // 连接自愈:断了自动恢复、隧道地址变了自动跟上
 })();
