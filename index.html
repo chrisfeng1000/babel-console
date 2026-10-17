@@ -56,6 +56,14 @@ table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;p
 .chk.on{background:#133a1f;border-color:#2b6a3c}
 .ttext{flex:1;word-break:break-word}.ttext.done{color:#6b7686;text-decoration:line-through}
 .del{color:#5a6472;cursor:pointer;font-size:14px;padding:0 4px}.del:active{color:#ffb4b4}
+.hstrip{display:flex;flex-wrap:wrap;gap:5px 12px;padding:9px 16px;border-bottom:1px solid #262b36;font-size:11px;color:#9aa6b5;cursor:pointer}
+.hd{display:inline-flex;align-items:center;gap:4px}
+.hdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;box-shadow:0 0 5px currentColor}
+.hrow{display:flex;align-items:center;gap:11px;padding:11px 2px;border-bottom:1px solid #1c2230}
+.hrow:last-child{border:0}
+.hname{min-width:118px;font-weight:600}
+.hdet{color:#9aa6b5;font-size:13px}
+.ov{font-size:30px;font-weight:800;letter-spacing:.5px}
 pre.detail{white-space:pre-wrap;font:12px/1.4 ui-monospace,monospace;color:#9db;background:#0f1115;border:1px solid #2a3140;border-radius:6px;padding:8px;margin:6px 0 0;max-height:240px;overflow:auto}
 @media(max-width:760px){
   #mtop{display:flex}
@@ -69,8 +77,10 @@ pre.detail{white-space:pre-wrap;font:12px/1.4 ui-monospace,monospace;color:#9db;
 <div id="wrap">
   <div id="side">
     <h1><span class="dot" id="dot"></span>Babel 控制台 <span id="sub" class="muted" style="margin-left:auto"></span></h1>
+    <div id="hstrip" class="hstrip" onclick="document.querySelector('nav button[data-v=over]').click()"><span class="muted">健康加载中…</span></div>
     <nav>
       <button data-v="chat" class="on">💬 对话(主控)</button>
+      <button data-v="over">🩺 总览 / 健康</button>
       <button data-v="todo">📋 待办 / 今日</button>
       <button data-v="fix">🛠 网页维修助手</button>
       <button data-v="status">📊 Babel 状态</button>
@@ -81,6 +91,7 @@ pre.detail{white-space:pre-wrap;font:12px/1.4 ui-monospace,monospace;color:#9db;
   </div>
   <div id="backdrop"></div>
   <main>
+    <div class="view" id="v-over"><div class="pane" id="pane-over"><div class="muted">加载中…</div></div></div>
     <div class="view on" id="v-chat"><div class="log" id="log-main"></div>
       <div class="bar"><textarea id="box-main" placeholder="跟主控 agent 说话:查状态、调卡、跑/停任务…(Enter 发送)"></textarea><button id="send-main">发送</button></div></div>
     <div class="view" id="v-fix"><div class="log" id="log-fix"><div class="sys">网页维修助手:网页哪里不好用、或想加功能,在这跟它说,它会改前端/后端并自动部署。</div></div>
@@ -188,6 +199,17 @@ async function delTodo(id){try{await fetch(api('/api/todo/del?id='+id))}catch(e)
 async function loadMail(){const box=document.getElementById('mail-list');if(!box||!BACKEND)return;
   try{const d=await(await fetch(api('/api/mail'),{cache:'no-store'})).json();
     box.innerHTML=(d.lines||[]).slice().reverse().map(l=>'<div style="font-size:12px;padding:3px 0;border-bottom:1px solid #1c2230;color:#9aa6b5">'+esc(l)+'</div>').join('')||'<span class="muted">无</span>'}catch(e){}}
+const HCOL={ok:'#3fb950',warn:'#e3b341',down:'#f85149'};
+async function loadHealth(){if(!BACKEND)return;
+  try{const d=await(await fetch(api('/api/health'),{cache:'no-store'})).json();const cs=d.components||[];
+    document.getElementById('hstrip').innerHTML=cs.map(c=>'<span class="hd" title="'+esc(c.name+': '+c.detail)+'"><span class="hdot" style="color:'+HCOL[c.status]+';background:'+HCOL[c.status]+'"></span>'+esc(c.name.replace('实验 ','').replace(' 集群',''))+'</span>').join('');
+    const pane=document.getElementById('pane-over');if(pane){
+      let h='<button class="refresh" onclick="loadHealth()">↻ 刷新</button>';
+      h+='<div class="card" style="text-align:center"><div class="ov" style="color:'+(d.ok?'#3fb950':'#f85149')+'">'+(d.ok?'系统正常':d.issues+' 项有问题')+'</div><div class="muted">共 '+cs.length+' 个组件</div></div>';
+      h+='<div class="card"><h3>各组件状态</h3>';
+      cs.forEach(c=>{h+='<div class="hrow"><span class="hdot" style="color:'+HCOL[c.status]+';background:'+HCOL[c.status]+'"></span><span class="hname">'+esc(c.name)+'</span><span class="hdet">'+esc(c.detail)+'</span></div>'});
+      h+='</div>';pane.innerHTML=h}
+  }catch(e){}}
 
 // 导航 + 移动抽屉
 const side=document.getElementById('side'),backdrop=document.getElementById('backdrop');
@@ -197,11 +219,12 @@ backdrop.onclick=closeDrawer;
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
   const v=b.dataset.v;document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.getElementById('v-'+v).classList.add('on');
-  if(v==='status')loadStatus();if(v==='reports')loadReports();if(v==='todo')loadTodos();closeDrawer()});
+  if(v==='over')loadHealth();if(v==='status')loadStatus();if(v==='reports')loadReports();if(v==='todo')loadTodos();closeDrawer()});
 
 (async()=>{await resolveBackend();makeChat('log-main','box-main','send-main','main');makeChat('log-fix','box-fix','send-fix','maintain');
   document.getElementById('todo-in').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addTodo()}});
   loadTasks();setInterval(loadTasks,15000);
+  loadHealth();setInterval(loadHealth,20000); // 系统健康:侧栏小圆点+总览,一眼看哪个有问题
   setInterval(resolveBackend,25000); // 连接自愈:断了自动恢复、隧道地址变了自动跟上
 })();
 </script></body></html>
