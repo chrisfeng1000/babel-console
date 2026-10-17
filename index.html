@@ -188,12 +188,15 @@ function askMain(text){nav('chat');const b=document.getElementById('box-main');b
 // ===== 聊天(带抗断重试)=====
 function makeChat(logId,boxId,sendId,mode){
   const log=document.getElementById(logId),box=document.getElementById(boxId),send=document.getElementById(sendId);
+  const HKEY='babel_chat_'+mode;
+  function saveHist(){try{const a=[...log.querySelectorAll('.msg.user,.msg.bot')].map(m=>({r:m.classList.contains('user')?'u':'b',t:m.textContent}));localStorage.setItem(HKEY,JSON.stringify(a.slice(-150)))}catch(e){}}
+  (function loadHist(){try{const a=JSON.parse(localStorage.getItem(HKEY)||'[]');if(!a.length)return;a.forEach(m=>el('msg '+(m.r==='u'?'user':'bot'),m.t,log));el('sys','— 以上为历史记录,新消息在下方 —',log);log.scrollTop=log.scrollHeight}catch(e){}})();
   function stream(msg,bot,attempt){let full='',wd=null;
     const es=new EventSource(api('/api/stream?mode='+mode+'&msg='+encodeURIComponent(msg)));
     const arm=()=>{clearTimeout(wd);wd=setTimeout(()=>{es.close();onfail(msg,bot,full,attempt)},150000)};arm();
     es.addEventListener('text',e=>{full+=JSON.parse(e.data);bot.textContent=full;bot.className='msg bot';log.scrollTop=log.scrollHeight;arm()});
     es.addEventListener('tool',e=>{el('msg tool','⚙ '+JSON.parse(e.data),log);log.scrollTop=log.scrollHeight;arm()});
-    es.addEventListener('done',e=>{clearTimeout(wd);const d=JSON.parse(e.data);if(d.result)bot.textContent=d.result;bot.className='msg bot';es.close();done()});
+    es.addEventListener('done',e=>{clearTimeout(wd);const d=JSON.parse(e.data);if(d.result)bot.textContent=d.result;bot.className='msg bot';if(d.cost){el('cost','≈$'+Number(d.cost).toFixed(3),bot)}saveHist();es.close();done()});
     es.addEventListener('error',()=>{clearTimeout(wd);es.close();onfail(msg,bot,full,attempt)});
   }
   function onfail(msg,bot,full,attempt){
@@ -203,7 +206,7 @@ function makeChat(logId,boxId,sendId,mode){
     tip.querySelector('span').onclick=()=>{tip.remove();if(!full){bot.className='msg bot';bot.textContent='思考中…'}stream(msg,bot,0)};bot.appendChild(tip);done();
   }
   async function go(){const msg=box.value.trim();if(!msg)return;if(!BACKEND){await resolveBackend();if(!BACKEND){setSub('后端离线,稍等…');return}}
-    el('msg user',msg,log);log.scrollTop=log.scrollHeight;box.value='';send.disabled=true;box.disabled=true;setDot('var(--warn)');
+    el('msg user',msg,log);saveHist();log.scrollTop=log.scrollHeight;box.value='';send.disabled=true;box.disabled=true;setDot('var(--warn)');
     const bot=el('msg bot','思考中…',log);log.scrollTop=log.scrollHeight;stream(msg,bot,0)}
   function done(){send.disabled=false;box.disabled=false;setDot('var(--ok)');box.focus()}
   send.onclick=go;box.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go()}});
