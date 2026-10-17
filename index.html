@@ -1,0 +1,62 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Babel Agent 控制台</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;font:15px/1.5 -apple-system,Segoe UI,Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#0f1115;color:#e6e6e6;height:100vh;display:flex;flex-direction:column}
+header{padding:10px 16px;background:#161a22;border-bottom:1px solid #262b36;font-weight:600;display:flex;gap:10px;align-items:center}
+header .dot{width:9px;height:9px;border-radius:50%;background:#6b7686;transition:background .3s}
+header .sub{font-weight:400;color:#8b98a9;font-size:12px}
+#log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:min(760px,92%);padding:10px 14px;border-radius:14px;white-space:pre-wrap;word-break:break-word}
+.user{align-self:flex-end;background:#2f6feb;color:#fff;border-bottom-right-radius:4px}
+.bot{align-self:flex-start;background:#1c2230;border:1px solid #2a3140;border-bottom-left-radius:4px}
+.tool{align-self:flex-start;font-size:12px;color:#8b98a9;padding:0 6px}
+.err{align-self:flex-start;background:#3a1d1d;border:1px solid #5a2a2a;color:#ffb4b4}
+.sys{align-self:center;font-size:12px;color:#6b7686}
+footer{padding:12px;background:#161a22;border-top:1px solid #262b36;display:flex;gap:8px}
+#box{flex:1;resize:none;height:46px;max-height:160px;padding:10px 12px;border-radius:10px;border:1px solid #2a3140;background:#0f1115;color:#e6e6e6;font:inherit}
+#send{padding:0 18px;border:0;border-radius:10px;background:#2f6feb;color:#fff;font-weight:600;cursor:pointer}
+#send:disabled{opacity:.5;cursor:default}
+.cost{font-size:11px;color:#6b7686;margin-top:4px}
+</style></head><body>
+<header><span class="dot" id="dot"></span>Babel Agent 控制台 <span class="sub" id="sub">连接中…</span></header>
+<div id="log"></div>
+<footer>
+  <textarea id="box" placeholder="说点什么…(Enter 发送,Shift+Enter 换行)" disabled></textarea>
+  <button id="send" disabled>发送</button>
+</footer>
+<script>
+const log=document.getElementById('log'),box=document.getElementById('box'),send=document.getElementById('send'),dot=document.getElementById('dot'),sub=document.getElementById('sub');
+const token=new URLSearchParams(location.search).get('token')||'';
+let BACKEND='';
+function add(cls,txt){const d=document.createElement('div');d.className='msg '+cls;d.textContent=txt||'';log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+function setReady(ok){dot.style.background=ok?'#3fb950':'#f85149';box.disabled=!ok;send.disabled=!ok;if(ok){sub.textContent='已连接 · '+BACKEND.replace(/^https:\/\//,'');box.focus()}}
+async function resolveBackend(){
+  if(!token){add('err','缺 token。请用带 ?token=... 的完整链接打开本页。');sub.textContent='缺 token';return}
+  try{
+    const r=await fetch('backend.txt?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok)throw new Error('backend.txt '+r.status);
+    BACKEND=(await r.text()).trim().replace(/\/+$/,'');
+    if(!/^https?:\/\//.test(BACKEND))throw new Error('后端地址异常');
+    // 探活:请求后端 ping(带 token),确认在线
+    try{const p=await fetch(BACKEND+'/ping?token='+encodeURIComponent(token),{cache:'no-store'});setReady(p.ok)}
+    catch(_){setReady(true)} // 探活失败也允许发(可能是 CORS 预检差异),真发时再报错
+    add('sys','后端:'+BACKEND);
+  }catch(e){add('err','拿后端地址失败:'+e.message+'(服务器可能在重启,过一会儿刷新)');sub.textContent='后端离线'}
+}
+function go(){
+  const msg=box.value.trim();if(!msg||!BACKEND)return;
+  add('user',msg);box.value='';send.disabled=true;box.disabled=true;dot.style.background='#d29922';sub.textContent='思考中…';
+  const bot=add('bot','');let full='';
+  const es=new EventSource(BACKEND+'/api/stream?token='+encodeURIComponent(token)+'&msg='+encodeURIComponent(msg));
+  es.addEventListener('text',e=>{full+=JSON.parse(e.data);bot.textContent=full;log.scrollTop=log.scrollHeight});
+  es.addEventListener('tool',e=>{add('tool','⚙ '+JSON.parse(e.data));log.scrollTop=log.scrollHeight});
+  es.addEventListener('done',e=>{const d=JSON.parse(e.data);if(d.result)bot.textContent=d.result;if(d.cost){const c=document.createElement('div');c.className='cost';c.textContent='≈$'+Number(d.cost).toFixed(3);bot.appendChild(c)}fin(es)});
+  es.addEventListener('error',()=>{if(!full)bot.textContent='(连接中断。后端可能在换地址,过一会儿刷新页面重试。)';bot.className='msg err';fin(es)});
+}
+function fin(es){es.close();send.disabled=false;box.disabled=false;dot.style.background='#3fb950';sub.textContent='已连接 · '+BACKEND.replace(/^https:\/\//,'');box.focus()}
+send.onclick=go;
+box.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go()}});
+resolveBackend();
+</script></body></html>
