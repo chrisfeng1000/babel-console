@@ -100,16 +100,32 @@ async function resolveBackend(){
 }
 function makeChat(logId,boxId,sendId,mode){
   const log=document.getElementById(logId),box=document.getElementById(boxId),send=document.getElementById(sendId);
-  function go(){const msg=box.value.trim();if(!msg||!BACKEND)return;
-    el('msg user',msg,log);log.scrollTop=log.scrollHeight;box.value='';send.disabled=true;box.disabled=true;setDot('#d29922');
-    const bot=el('msg bot','',log);let full='';
+  function stream(msg,bot,attempt){
+    let full='',wd=null;
     const es=new EventSource(api('/api/stream?mode='+mode+'&msg='+encodeURIComponent(msg)));
-    es.addEventListener('text',e=>{full+=JSON.parse(e.data);bot.textContent=full;log.scrollTop=log.scrollHeight});
-    es.addEventListener('tool',e=>{el('msg tool','⚙ '+JSON.parse(e.data),log);log.scrollTop=log.scrollHeight});
-    es.addEventListener('done',e=>{const d=JSON.parse(e.data);if(d.result)bot.textContent=d.result;if(d.cost){const c=el('cost','≈$'+Number(d.cost).toFixed(3));bot.appendChild(c)}fin(es)});
-    es.addEventListener('error',()=>{if(!full){bot.textContent='(连接中断,稍后刷新重试)';bot.className='msg err'}fin(es)});
+    const arm=()=>{clearTimeout(wd);wd=setTimeout(()=>{es.close();onfail(msg,bot,full,attempt)},150000)}; // 150s 静默才判失败(会随每个事件重置)
+    arm();
+    es.addEventListener('text',e=>{full+=JSON.parse(e.data);bot.textContent=full;bot.className='msg bot';log.scrollTop=log.scrollHeight;arm()});
+    es.addEventListener('tool',e=>{el('msg tool','⚙ '+JSON.parse(e.data),log);log.scrollTop=log.scrollHeight;arm()});
+    es.addEventListener('done',e=>{clearTimeout(wd);const d=JSON.parse(e.data);if(d.result)bot.textContent=d.result;bot.className='msg bot';if(d.cost){const c=el('cost','≈$'+Number(d.cost).toFixed(3));bot.appendChild(c)}es.close();done()});
+    es.addEventListener('error',()=>{clearTimeout(wd);es.close();onfail(msg,bot,full,attempt)});
   }
-  function fin(es){es.close();send.disabled=false;box.disabled=false;setDot('#3fb950');box.focus()}
+  function onfail(msg,bot,full,attempt){
+    // 没出任何内容 + 第一次失败 → 后端可能刚瞬断,自动重连重试一次(会话还在,内容不丢)
+    if(!full && attempt<1){bot.className='msg bot';bot.textContent='(连接断了,正在自动重连…)';
+      resolveBackend().finally(()=>setTimeout(()=>stream(msg,bot,attempt+1),1600));return}
+    // 否则保留已收到的内容,给一个手动重试按钮
+    bot.className=full?'msg bot':'msg err';
+    const tip=document.createElement('div');tip.style.cssText='font-size:12px;margin-top:4px;color:#9db4d6';
+    tip.innerHTML=(full?'(回复中断,会话未丢)':'(连接中断)')+' <span style="cursor:pointer;text-decoration:underline">↻ 重试</span>';
+    tip.querySelector('span').onclick=()=>{tip.remove();if(!full){bot.className='msg bot';bot.textContent='思考中…'}stream(msg,bot,0)};
+    bot.appendChild(tip);done();
+  }
+  async function go(){const msg=box.value.trim();if(!msg)return;
+    if(!BACKEND){await resolveBackend();if(!BACKEND){setSub('后端离线,稍等…');return}}
+    el('msg user',msg,log);log.scrollTop=log.scrollHeight;box.value='';send.disabled=true;box.disabled=true;setDot('#d29922');
+    const bot=el('msg bot','思考中…',log);log.scrollTop=log.scrollHeight;stream(msg,bot,0);}
+  function done(){send.disabled=false;box.disabled=false;setDot('#3fb950');box.focus()}
   send.onclick=go;box.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go()}});
 }
 function badge(s){const m={RUNNING:'b-run',PENDING:'b-pend'};const cls=m[s]||(s.includes('终态')?'b-done':'b-other');return '<span class="badge '+cls+'">'+esc(s)+'</span>'}
@@ -154,6 +170,8 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   const v=b.dataset.v;document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.getElementById('v-'+v).classList.add('on');
   if(v==='status')loadStatus();if(v==='reports')loadReports();closeDrawer()});
 
-(async()=>{const ok=await resolveBackend();makeChat('log-main','box-main','send-main','main');makeChat('log-fix','box-fix','send-fix','maintain');
-  if(ok){loadTasks();setInterval(loadTasks,15000)}else{document.getElementById('tasks').innerHTML='<div class="msg err" style="margin:8px">后端没连上,稍后刷新。</div>'}})();
+(async()=>{await resolveBackend();makeChat('log-main','box-main','send-main','main');makeChat('log-fix','box-fix','send-fix','maintain');
+  loadTasks();setInterval(loadTasks,15000);
+  setInterval(resolveBackend,25000); // 连接自愈:断了自动恢复、隧道地址变了自动跟上
+})();
 </script></body></html>
