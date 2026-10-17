@@ -2,216 +2,249 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Babel 控制台</title>
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}
-body{margin:0;font:14px/1.5 -apple-system,Segoe UI,Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#0f1115;color:#e6e6e6;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-#mtop{display:none;align-items:center;gap:10px;padding:10px 14px;background:#12151c;border-bottom:1px solid #262b36}
-#mtop button{background:transparent;border:0;color:#e6e6e6;font-size:22px;cursor:pointer;padding:0 4px}
+:root{
+  --bg:#0a0c12; --bg2:#0e1118; --surf:#151a24; --surf2:#1a2130; --line:#242c3a;
+  --tx:#e9edf4; --mut:#8893a7; --acc:#7c6cff; --acc2:#9d7bff;
+  --ok:#34d399; --warn:#fbbf24; --bad:#f87171;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.55 -apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:
+  radial-gradient(1200px 600px at 80% -10%,rgba(124,108,255,.10),transparent 60%),var(--bg);color:var(--tx);height:100dvh;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
+#mtop{display:none;align-items:center;gap:12px;padding:11px 15px;background:rgba(14,17,24,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+#mtop button{background:transparent;border:0;color:var(--tx);font-size:21px;cursor:pointer;padding:0 2px}
+#mtop b{font-weight:700;letter-spacing:.3px}
 #wrap{flex:1;display:flex;min-height:0}
-#backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9}
-#side{width:252px;flex-shrink:0;background:#12151c;border-right:1px solid #262b36;display:flex;flex-direction:column;min-height:0}
-#side h1{font-size:14px;margin:0;padding:14px 16px;border-bottom:1px solid #262b36;display:flex;gap:8px;align-items:center}
-#side .dot{width:9px;height:9px;border-radius:50%;background:#6b7686;transition:background .3s}
-nav{padding:8px}
-nav button{display:block;width:100%;text-align:left;padding:10px 12px;margin:2px 0;border:0;border-radius:8px;background:transparent;color:#cdd3dd;font:inherit;cursor:pointer}
-nav button.on{background:#223049;color:#fff}
-.sideh{padding:10px 16px 4px;font-size:12px;color:#6b7686;border-top:1px solid #262b36;margin-top:6px}
-#tasks{flex:1;overflow-y:auto;padding:4px 10px}
-.tk{padding:8px 10px;border:1px solid #2a3140;border-radius:8px;margin:6px 0;background:#161b24}
-.tk .t{font-weight:600}.tk .s{font-size:12px;margin-top:2px}.tk .e{font-size:11px;color:#8b98a9;margin-top:3px;white-space:pre-wrap}
-.badge{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px}
-.b-run{background:#133a1f;color:#4ad66d}.b-pend{background:#3a2f13;color:#e3b341}.b-done{background:#1c2638;color:#8b98a9}.b-other{background:#2a2030;color:#c98bdb}
-main{flex:1;display:flex;flex-direction:column;min-width:0}
+#backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9}
+#side{width:236px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.brand{display:flex;align-items:center;gap:9px;padding:16px 18px 12px;font-weight:700;letter-spacing:.3px;font-size:15px}
+.brand .lg{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:14px}
+.conn{font-size:11px;color:var(--mut);display:flex;align-items:center;gap:5px;padding:0 18px 10px}
+.conn .d{width:7px;height:7px;border-radius:50%;background:var(--mut);box-shadow:0 0 6px currentColor}
+nav{padding:6px 10px;overflow-y:auto}
+nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;margin:1px 0;border:0;border-radius:10px;background:transparent;color:#c3cad8;font:inherit;cursor:pointer;transition:.12s}
+nav button:hover{background:var(--surf)}
+nav button.on{background:linear-gradient(90deg,rgba(124,108,255,.22),rgba(124,108,255,.06));color:#fff;box-shadow:inset 2px 0 0 var(--acc)}
+nav button .ic{width:18px;text-align:center}
+.spacer{flex:1}
+.foot{padding:10px 18px;font-size:11px;color:var(--mut);border-top:1px solid var(--line)}
+main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
 .view{flex:1;display:none;flex-direction:column;min-height:0}.view.on{display:flex}
-.log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
-.msg{max-width:min(720px,94%);padding:9px 13px;border-radius:13px;white-space:pre-wrap;word-break:break-word}
-.user{align-self:flex-end;background:#2f6feb;color:#fff;border-bottom-right-radius:4px}
-.bot{align-self:flex-start;background:#1c2230;border:1px solid #2a3140;border-bottom-left-radius:4px}
-.tool{align-self:flex-start;font-size:12px;color:#8b98a9;padding:0 4px}
-.err{align-self:flex-start;background:#3a1d1d;border:1px solid #5a2a2a;color:#ffb4b4}
-.sys{align-self:center;font-size:12px;color:#6b7686;text-align:center}
-.cost{font-size:11px;color:#6b7686;margin-top:4px}
-.bar{padding:10px;border-top:1px solid #262b36;background:#12151c;display:flex;gap:8px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
-textarea{flex:1;resize:none;height:44px;max-height:150px;padding:9px 12px;border-radius:9px;border:1px solid #2a3140;background:#0f1115;color:#e6e6e6;font:inherit}
-.bar button{padding:0 16px;border:0;border-radius:9px;background:#2f6feb;color:#fff;font-weight:600;cursor:pointer}
-.bar button:disabled{opacity:.5}
-.pane{flex:1;overflow-y:auto;padding:16px}
-.card{background:#161b24;border:1px solid #2a3140;border-radius:10px;padding:12px 14px;margin:0 0 12px}
-.card h3{margin:0 0 10px;font-size:14px}
-.grow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:7px 0}
-.gname{font-size:13px;min-width:96px}
-.gbar{flex:1;height:10px;background:#0f1115;border:1px solid #2a3140;border-radius:6px;overflow:hidden}
-.gfill{height:100%;background:#2f6feb}
-.gnum{font-size:12px;color:#8b98a9;min-width:92px;text-align:right}
-.big{font-size:22px;font-weight:700}
-table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;padding:5px 6px;border-bottom:1px solid #222}
-.muted{color:#6b7686;font-size:12px}
-.refresh{float:right;font-size:12px;color:#6b7686;cursor:pointer;background:transparent;border:0}
-.xbtn{padding:2px 9px;border:1px solid #5a2a2a;background:#2a1414;color:#ffb4b4;border-radius:6px;font-size:12px;cursor:pointer}
-.ibtn{padding:4px 11px;border:1px solid #2a3140;background:#1c2230;color:#9db4d6;border-radius:7px;font-size:13px;cursor:pointer}
-.card{box-shadow:0 1px 4px rgba(0,0,0,.25)}
-#todo-in{flex:1;padding:9px 11px;border-radius:8px;border:1px solid #2a3140;background:#0f1115;color:#e6e6e6;font:inherit}
-.todoitem{display:flex;align-items:center;gap:11px;padding:9px 2px;border-bottom:1px solid #1c2230}
-.todoitem:last-child{border:0}
-.chk{width:21px;height:21px;border:1.5px solid #3a4454;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#4ad66d;font-size:13px;flex-shrink:0}
-.chk.on{background:#133a1f;border-color:#2b6a3c}
-.ttext{flex:1;word-break:break-word}.ttext.done{color:#6b7686;text-decoration:line-through}
-.del{color:#5a6472;cursor:pointer;font-size:14px;padding:0 4px}.del:active{color:#ffb4b4}
-.hstrip{display:flex;flex-wrap:wrap;gap:5px 12px;padding:9px 16px;border-bottom:1px solid #262b36;font-size:11px;color:#9aa6b5;cursor:pointer}
-.hd{display:inline-flex;align-items:center;gap:4px}
-.hdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;box-shadow:0 0 5px currentColor}
-.hrow{display:flex;align-items:center;gap:11px;padding:11px 2px;border-bottom:1px solid #1c2230}
-.hrow:last-child{border:0}
-.hname{min-width:118px;font-weight:600}
-.hdet{color:#9aa6b5;font-size:13px}
-.ov{font-size:30px;font-weight:800;letter-spacing:.5px}
-pre.detail{white-space:pre-wrap;font:12px/1.4 ui-monospace,monospace;color:#9db;background:#0f1115;border:1px solid #2a3140;border-radius:6px;padding:8px;margin:6px 0 0;max-height:240px;overflow:auto}
-@media(max-width:760px){
+.pane{flex:1;overflow-y:auto;padding:18px}
+h2.title{margin:2px 2px 14px;font-size:17px;font-weight:700}
+.sub{color:var(--mut);font-size:12.5px;font-weight:400;margin-left:8px}
+/* bento */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:14px}
+.tile{background:linear-gradient(180deg,var(--surf2),var(--surf));border:1px solid var(--line);border-radius:16px;padding:15px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.tile.span2{grid-column:span 2}
+.tile h3{margin:0;font-size:13px;color:var(--mut);font-weight:600;display:flex;align-items:center;gap:7px;letter-spacing:.2px}
+.tile .num{font-size:30px;font-weight:800;letter-spacing:.5px;line-height:1.1}
+.tile .click{cursor:pointer}
+.row{display:flex;align-items:center;gap:9px;padding:5px 0}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:0 0 7px currentColor}
+.nm{flex:1;font-size:13px}.det{color:var(--mut);font-size:12px}
+.bar{height:8px;border-radius:5px;background:#0c0f16;border:1px solid var(--line);overflow:hidden}
+.fill{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600}
+.p-ok{background:rgba(52,211,153,.16);color:var(--ok)}.p-warn{background:rgba(251,191,36,.16);color:var(--warn)}.p-bad{background:rgba(248,113,113,.16);color:var(--bad)}.p-mut{background:#222a38;color:var(--mut)}
+.tbtn{align-self:flex-start;padding:7px 12px;border:1px solid var(--line);background:var(--surf);color:#cdd6e6;border-radius:9px;font:inherit;font-size:12.5px;cursor:pointer;transition:.12s}
+.tbtn:hover{border-color:var(--acc);color:#fff}
+.tbtn.acc{background:linear-gradient(135deg,var(--acc),var(--acc2));border:0;color:#fff;font-weight:600}
+.li{font-size:13px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:8px;align-items:flex-start}
+.li:last-child{border:0}
+.mut{color:var(--mut);font-size:12.5px}
+/* chat */
+.log{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:11px}
+.msg{max-width:min(720px,92%);padding:10px 14px;border-radius:15px;white-space:pre-wrap;word-break:break-word;font-size:14px}
+.user{align-self:flex-end;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-bottom-right-radius:5px}
+.bot{align-self:flex-start;background:var(--surf2);border:1px solid var(--line);border-bottom-left-radius:5px}
+.tool{align-self:flex-start;font-size:12px;color:var(--mut);padding:0 4px}
+.err{align-self:flex-start;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);color:#fca5a5}
+.sys{align-self:center;font-size:12px;color:var(--mut);text-align:center;max-width:90%}
+.cost{font-size:11px;color:var(--mut);margin-top:5px}
+.composer{padding:12px;border-top:1px solid var(--line);background:var(--bg2);display:flex;gap:9px;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+textarea,.inp{flex:1;resize:none;height:46px;max-height:150px;padding:11px 13px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--tx);font:inherit}
+.send{padding:0 18px;border:0;border-radius:12px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-weight:600;cursor:pointer}
+.send:disabled{opacity:.5}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 14px;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.card h3{margin:0 0 11px;font-size:14px}
+.refresh{float:right;font-size:12px;color:var(--mut);cursor:pointer;background:transparent;border:0}
+table{width:100%;border-collapse:collapse;font-size:12.5px}td,th{text-align:left;padding:6px;border-bottom:1px solid var(--line)}
+.xbtn{padding:3px 10px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.08);color:#fca5a5;border-radius:7px;font-size:12px;cursor:pointer}
+.chk{width:21px;height:21px;border:1.5px solid #3a4454;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ok);font-size:13px;flex-shrink:0}
+.chk.on{background:rgba(52,211,153,.14);border-color:var(--ok)}
+.ttext{flex:1;word-break:break-word}.ttext.done{color:var(--mut);text-decoration:line-through}
+pre.detail{white-space:pre-wrap;font:12px/1.45 ui-monospace,monospace;color:#aeb8c8;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;margin:7px 0 0;max-height:300px;overflow:auto}
+@media(max-width:780px){
   #mtop{display:flex}
-  #side{position:fixed;z-index:10;top:0;bottom:0;left:0;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 16px rgba(0,0,0,.5)}
+  #side{position:fixed;z-index:10;top:0;bottom:0;left:0;transform:translateX(-100%);transition:transform .22s;box-shadow:4px 0 24px rgba(0,0,0,.5)}
   #side.open{transform:none}
-  #side.open ~ #backdrop,#backdrop.show{display:block}
+  #backdrop.show{display:block}
+  .grid{grid-template-columns:1fr}
+  .tile.span2{grid-column:span 1}
   .msg{max-width:100%}
 }
 </style></head><body>
-<div id="mtop"><button id="ham">☰</button><span class="dot" id="dot2" style="width:9px;height:9px;border-radius:50%;background:#6b7686"></span><b>Babel 控制台</b><span id="sub2" class="muted" style="margin-left:auto"></span></div>
+<div id="mtop"><button id="ham">☰</button><span class="dot" id="dot2" style="background:var(--mut)"></span><b>Babel 控制台</b></div>
 <div id="wrap">
-  <div id="side">
-    <h1><span class="dot" id="dot"></span>Babel 控制台 <span id="sub" class="muted" style="margin-left:auto"></span></h1>
-    <div id="hstrip" class="hstrip" onclick="document.querySelector('nav button[data-v=over]').click()"><span class="muted">健康加载中…</span></div>
+  <aside id="side">
+    <div class="brand"><span class="lg">⬡</span>Babel 控制台</div>
+    <div class="conn"><span class="d" id="dot"></span><span id="sub">连接中…</span></div>
     <nav>
-      <button data-v="chat" class="on">💬 对话(主控)</button>
-      <button data-v="over">🩺 总览 / 健康</button>
-      <button data-v="todo">📋 待办 / 今日</button>
-      <button data-v="fix">🛠 网页维修助手</button>
-      <button data-v="status">📊 Babel 状态</button>
-      <button data-v="reports">📄 报告</button>
+      <button data-v="dash" class="on"><span class="ic">▦</span>控制台</button>
+      <button data-v="chat"><span class="ic">💬</span>对话(主控)</button>
+      <button data-v="todo"><span class="ic">✓</span>待办 / 今日</button>
+      <button data-v="mail"><span class="ic">✉</span>邮件</button>
+      <button data-v="server"><span class="ic">▤</span>服务器 / 算力</button>
+      <button data-v="reports"><span class="ic">▣</span>报告</button>
+      <button data-v="fix"><span class="ic">🛠</span>网页维修助手</button>
     </nav>
-    <div class="sideh">进行中的任务</div>
-    <div id="tasks"><div class="muted" style="padding:8px 6px">加载中…</div></div>
-  </div>
+    <div class="spacer"></div>
+    <div class="foot">一体化工作助手 · GPU 调度 · 待办 · 邮件</div>
+  </aside>
   <div id="backdrop"></div>
   <main>
-    <div class="view" id="v-over"><div class="pane" id="pane-over"><div class="muted">加载中…</div></div></div>
-    <div class="view on" id="v-chat"><div class="log" id="log-main"></div>
-      <div class="bar"><textarea id="box-main" placeholder="跟主控 agent 说话:查状态、调卡、跑/停任务…(Enter 发送)"></textarea><button id="send-main">发送</button></div></div>
-    <div class="view" id="v-fix"><div class="log" id="log-fix"><div class="sys">网页维修助手:网页哪里不好用、或想加功能,在这跟它说,它会改前端/后端并自动部署。</div></div>
-      <div class="bar"><textarea id="box-fix" placeholder="网页有问题或想加功能?告诉维修助手…(Enter 发送)"></textarea><button id="send-fix">发送</button></div></div>
-    <div class="view" id="v-status"><div class="pane" id="pane-status"><div class="muted">加载中…</div></div></div>
-    <div class="view" id="v-reports"><div class="pane" id="pane-reports"><div class="muted">加载中…</div></div></div>
-    <div class="view" id="v-todo"><div class="pane">
-      <div class="card"><h3>今日待办 <button class="refresh" onclick="loadTodos()">↻ 刷新</button></h3>
-        <div style="display:flex;gap:8px;margin-bottom:12px"><input id="todo-in" placeholder="加一条待办,回车…"><button class="ibtn" onclick="addTodo()">加</button></div>
-        <div id="todo-list"><div class="muted">加载中…</div></div></div>
-      <div class="card"><h3>最近邮件活动</h3><div id="mail-list" class="muted">加载中…</div></div>
-      <div class="card"><h3>融合来源</h3><div class="muted">邮件活动已接入(上方)。Slack 待接入:给我一个 Slack 的 incoming-webhook URL 或 bot token,我就把 Slack 消息也融进这里。你在对话里随口说"记一下 X",主控也会自动加进待办。</div></div>
+    <div class="view on" id="v-dash"><div class="pane">
+      <h2 class="title">控制台 <span class="sub" id="dash-sub"></span></h2>
+      <div class="grid" id="dash"><div class="mut">加载中…</div></div>
     </div></div>
+    <div class="view" id="v-chat"><div class="log" id="log-main"></div>
+      <div class="composer"><textarea id="box-main" placeholder="跟主控 agent 说话:查状态、调卡、跑/停任务、记待办…(Enter 发送)"></textarea><button class="send" id="send-main">发送</button></div></div>
+    <div class="view" id="v-todo"><div class="pane">
+      <h2 class="title">待办 / 今日 <span class="sub">随手记 · AI 可帮你整理排序</span></h2>
+      <div class="card">
+        <div style="display:flex;gap:9px;margin-bottom:12px"><input class="inp" id="todo-in" style="height:42px" placeholder="加一条待办,回车…"><button class="tbtn" onclick="addTodo()">加</button></div>
+        <div style="margin-bottom:12px"><button class="tbtn acc" onclick="askMain('看一下我现在的待办清单,帮我按紧急/重要排个优先级,告诉我今天先做哪几件。')">🤖 让 AI 帮我排优先级</button></div>
+        <div id="todo-list"><div class="mut">加载中…</div></div>
+      </div></div></div>
+    <div class="view" id="v-mail"><div class="pane">
+      <h2 class="title">邮件 <span class="sub">最近往来 · AI 可整理成待办</span></h2>
+      <div class="card">
+        <div style="margin-bottom:12px"><button class="tbtn acc" onclick="askMain('读最近的邮件活动(/home/hanqif/agent 的 mailbot 日志),把其中需要我做的事整理成待办,写进 webchat/todos.json。做完告诉我加了哪几条。')">🤖 让 AI 把邮件整理成待办</button></div>
+        <div id="mail-list" class="mut">加载中…</div>
+      </div></div></div>
+    <div class="view" id="v-server"><div class="pane" id="pane-server"><div class="mut">加载中…</div></div></div>
+    <div class="view" id="v-reports"><div class="pane" id="pane-reports"><div class="mut">加载中…</div></div></div>
+    <div class="view" id="v-fix"><div class="log" id="log-fix"><div class="sys">网页维修助手:网页哪里不好用、想改配色/加功能,在这直接说,它会改前端并自动部署。</div></div>
+      <div class="composer"><textarea id="box-fix" placeholder="网页有问题或想改哪?告诉维修助手…(Enter 发送)"></textarea><button class="send" id="send-fix">发送</button></div></div>
   </main>
 </div>
 <script>
 const token=new URLSearchParams(location.search).get('token')||'';
-const dots=[document.getElementById('dot'),document.getElementById('dot2')],subs=[document.getElementById('sub'),document.getElementById('sub2')];
+const dots=[document.getElementById('dot'),document.getElementById('dot2')];
 let BACKEND='';
+const EXPNAME={'8B@A100-80G':'8B 忠实版 · A100-80G','preview-any':'4B 预览 · 抢任意空卡','4B@A100-40G':'4B · A100-40G'};
+const expLabel=t=>EXPNAME[t]||t;
+const HCOL={ok:'var(--ok)',warn:'var(--warn)',down:'var(--bad)'};
 function api(p){return BACKEND+p+(p.includes('?')?'&':'?')+'token='+encodeURIComponent(token)}
+function j(p){return fetch(api(p),{cache:'no-store'}).then(r=>r.json())}
 function setDot(c){dots.forEach(d=>{if(d)d.style.background=c})}
-function setSub(t){subs.forEach(s=>{if(s)s.textContent=t})}
+function setSub(t){const s=document.getElementById('sub');if(s)s.textContent=t}
 function el(c,t,p){const d=document.createElement('div');d.className=c;if(t!=null)d.textContent=t;if(p)p.appendChild(d);return d}
 const esc=s=>(s||'').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+function pill(s){return {ok:'p-ok',warn:'p-warn',down:'p-bad'}[s]||'p-mut'}
 
 async function resolveBackend(){
   if(!token){setSub('缺 token');return false}
   try{
     if(location.hostname.endsWith('github.io')){const r=await fetch('backend.txt?t='+Date.now(),{cache:'no-store'});BACKEND=(await r.text()).trim().replace(/\/+$/,'')}
     else{BACKEND=location.origin}
-    const p=await fetch(api('/ping'),{cache:'no-store'});const ok=p.ok;setDot(ok?'#3fb950':'#f85149');setSub(ok?'已连接':'后端离线');return ok
-  }catch(e){setDot('#f85149');setSub('后端离线,稍后刷新');return false}
+    const p=await fetch(api('/ping'),{cache:'no-store'});const ok=p.ok;setDot(ok?'var(--ok)':'var(--bad)');setSub(ok?'已连接':'后端离线');return ok
+  }catch(e){setDot('var(--bad)');setSub('后端离线,稍后自动重连');return false}
 }
+
+// ===== 控制台 bento =====
+function nav(v){document.querySelector('nav button[data-v='+v+']').click()}
+async function loadDash(){if(!BACKEND)return;const g=document.getElementById('dash');
+  try{
+    const [h,td,ml]=await Promise.all([j('/api/health'),j('/api/todos'),j('/api/mail')]);
+    const cs=h.components||[];
+    const find=n=>cs.find(c=>c.name===n)||{status:'warn',detail:''};
+    const babel=find('Babel 集群'), exps=cs.filter(c=>c.name.startsWith('实验 '));
+    const servers=cs.filter(c=>['Babel 集群','shap0','shap1','网页后端','自动循环'].includes(c.name));
+    const todos=td.todos||[], undone=todos.filter(t=>!t.done);
+    let h2='';
+    // 健康总览
+    h2+='<div class="tile span2 click" onclick="nav(\'server\')"><h3>🩺 系统健康</h3><div class="num" style="color:'+(h.ok?'var(--ok)':'var(--bad)')+'">'+(h.ok?'全部正常':h.issues+' 项有问题')+'</div><div>'+servers.map(c=>'<span style="display:inline-flex;align-items:center;gap:4px;margin:3px 10px 3px 0;font-size:12px;color:var(--mut)"><span class="dot" style="color:'+HCOL[c.status]+';background:'+HCOL[c.status]+'"></span>'+esc(c.name.replace(' 集群',''))+'</span>').join('')+'</div></div>';
+    // 算力
+    const gm=(babel.detail.match(/空闲 (\d+) \/ 共 (\d+)/)||[0,0,0]);const av=+gm[1],tot=+gm[2],pct=tot?Math.round((tot-av)/tot*100):0;
+    h2+='<div class="tile click" onclick="nav(\'server\')"><h3>🖥 Babel 算力</h3><div class="num">'+av+'<span style="font-size:15px;color:var(--mut)"> / '+tot+' 空闲</span></div><div class="bar"><span class="fill" style="width:'+pct+'%"></span></div><div class="det">已用 '+pct+'%</div></div>';
+    // 服务器
+    h2+='<div class="tile click" onclick="nav(\'server\')"><h3>🌐 服务器</h3>'+['Babel 集群','shap0','shap1'].map(n=>{const c=find(n);return '<div class="row"><span class="dot" style="color:'+HCOL[c.status]+';background:'+HCOL[c.status]+'"></span><span class="nm">'+esc(n.replace(' 集群',''))+'</span><span class="pill '+pill(c.status)+'">'+(c.status==='ok'?'正常':c.status==='warn'?'紧张':'离线')+'</span></div>'}).join('')+'</div>';
+    // 实验
+    h2+='<div class="tile click" onclick="nav(\'server\')"><h3>🧪 实验</h3>'+(exps.length?exps.map(c=>'<div class="row"><span class="dot" style="color:'+HCOL[c.status]+';background:'+HCOL[c.status]+'"></span><span class="nm">'+esc(expLabel(c.name.replace('实验 ','')))+'</span></div><div class="det" style="margin:-4px 0 6px 18px">'+esc(c.detail)+'</div>').join(''):'<div class="mut">暂无</div>')+'</div>';
+    // 待办
+    h2+='<div class="tile"><h3>✓ 待办 <span style="color:var(--mut)">('+undone.length+' 未完成)</span></h3>'+(undone.slice(0,4).map(t=>'<div class="li">· '+esc(t.text)+'</div>').join('')||'<div class="mut">今天没有待办 🎉</div>')+'<button class="tbtn" style="margin-top:6px" onclick="nav(\'todo\')">打开待办 →</button></div>';
+    // 邮件
+    h2+='<div class="tile"><h3>✉ 邮件活动</h3>'+((ml.lines||[]).slice(-4).reverse().map(l=>'<div class="li" style="color:var(--mut);font-size:12px">'+esc(l)+'</div>').join('')||'<div class="mut">无</div>')+'<button class="tbtn" style="margin-top:6px" onclick="nav(\'mail\')">打开邮件 →</button></div>';
+    // 快速提问
+    h2+='<div class="tile span2"><h3>⚡ 快速问主控</h3><div style="display:flex;gap:9px"><input class="inp" id="dash-ask" style="height:42px" placeholder="例:现在有几张 80G 空卡?帮我记个待办…"><button class="send" style="border-radius:12px" onclick="dashAsk()">问</button></div></div>';
+    g.innerHTML=h2;
+    document.getElementById('dash-sub').textContent='更新于 '+new Date().toLocaleTimeString();
+    const di=document.getElementById('dash-ask');if(di)di.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();dashAsk()}});
+  }catch(e){g.innerHTML='<div class="mut">加载失败,后端可能在重连,稍候…</div>'}
+}
+function dashAsk(){const i=document.getElementById('dash-ask');if(i&&i.value.trim()){askMain(i.value.trim());i.value=''}}
+function askMain(text){nav('chat');const b=document.getElementById('box-main');b.value=text;document.getElementById('send-main').click()}
+
+// ===== 聊天(带抗断重试)=====
 function makeChat(logId,boxId,sendId,mode){
   const log=document.getElementById(logId),box=document.getElementById(boxId),send=document.getElementById(sendId);
-  function stream(msg,bot,attempt){
-    let full='',wd=null;
+  function stream(msg,bot,attempt){let full='',wd=null;
     const es=new EventSource(api('/api/stream?mode='+mode+'&msg='+encodeURIComponent(msg)));
-    const arm=()=>{clearTimeout(wd);wd=setTimeout(()=>{es.close();onfail(msg,bot,full,attempt)},150000)}; // 150s 静默才判失败(会随每个事件重置)
-    arm();
+    const arm=()=>{clearTimeout(wd);wd=setTimeout(()=>{es.close();onfail(msg,bot,full,attempt)},150000)};arm();
     es.addEventListener('text',e=>{full+=JSON.parse(e.data);bot.textContent=full;bot.className='msg bot';log.scrollTop=log.scrollHeight;arm()});
     es.addEventListener('tool',e=>{el('msg tool','⚙ '+JSON.parse(e.data),log);log.scrollTop=log.scrollHeight;arm()});
-    es.addEventListener('done',e=>{clearTimeout(wd);const d=JSON.parse(e.data);if(d.result)bot.textContent=d.result;bot.className='msg bot';if(d.cost){const c=el('cost','≈$'+Number(d.cost).toFixed(3));bot.appendChild(c)}es.close();done()});
+    es.addEventListener('done',e=>{clearTimeout(wd);const d=JSON.parse(e.data);if(d.result)bot.textContent=d.result;bot.className='msg bot';if(d.cost){el('cost','≈$'+Number(d.cost).toFixed(3),bot)}es.close();done()});
     es.addEventListener('error',()=>{clearTimeout(wd);es.close();onfail(msg,bot,full,attempt)});
   }
   function onfail(msg,bot,full,attempt){
-    // 没出任何内容 + 第一次失败 → 后端可能刚瞬断,自动重连重试一次(会话还在,内容不丢)
-    if(!full && attempt<1){bot.className='msg bot';bot.textContent='(连接断了,正在自动重连…)';
-      resolveBackend().finally(()=>setTimeout(()=>stream(msg,bot,attempt+1),1600));return}
-    // 否则保留已收到的内容,给一个手动重试按钮
-    bot.className=full?'msg bot':'msg err';
-    const tip=document.createElement('div');tip.style.cssText='font-size:12px;margin-top:4px;color:#9db4d6';
+    if(!full&&attempt<1){bot.className='msg bot';bot.textContent='(连接断了,正在自动重连…)';resolveBackend().finally(()=>setTimeout(()=>stream(msg,bot,attempt+1),1600));return}
+    bot.className=full?'msg bot':'msg err';const tip=document.createElement('div');tip.style.cssText='font-size:12px;margin-top:5px;color:#9db4d6';
     tip.innerHTML=(full?'(回复中断,会话未丢)':'(连接中断)')+' <span style="cursor:pointer;text-decoration:underline">↻ 重试</span>';
-    tip.querySelector('span').onclick=()=>{tip.remove();if(!full){bot.className='msg bot';bot.textContent='思考中…'}stream(msg,bot,0)};
-    bot.appendChild(tip);done();
+    tip.querySelector('span').onclick=()=>{tip.remove();if(!full){bot.className='msg bot';bot.textContent='思考中…'}stream(msg,bot,0)};bot.appendChild(tip);done();
   }
-  async function go(){const msg=box.value.trim();if(!msg)return;
-    if(!BACKEND){await resolveBackend();if(!BACKEND){setSub('后端离线,稍等…');return}}
-    el('msg user',msg,log);log.scrollTop=log.scrollHeight;box.value='';send.disabled=true;box.disabled=true;setDot('#d29922');
-    const bot=el('msg bot','思考中…',log);log.scrollTop=log.scrollHeight;stream(msg,bot,0);}
-  function done(){send.disabled=false;box.disabled=false;setDot('#3fb950');box.focus()}
+  async function go(){const msg=box.value.trim();if(!msg)return;if(!BACKEND){await resolveBackend();if(!BACKEND){setSub('后端离线,稍等…');return}}
+    el('msg user',msg,log);log.scrollTop=log.scrollHeight;box.value='';send.disabled=true;box.disabled=true;setDot('var(--warn)');
+    const bot=el('msg bot','思考中…',log);log.scrollTop=log.scrollHeight;stream(msg,bot,0)}
+  function done(){send.disabled=false;box.disabled=false;setDot('var(--ok)');box.focus()}
   send.onclick=go;box.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go()}});
 }
-function badge(s){const m={RUNNING:'b-run',PENDING:'b-pend'};const cls=m[s]||(s.includes('终态')?'b-done':'b-other');return '<span class="badge '+cls+'">'+esc(s)+'</span>'}
-async function loadTasks(){if(!BACKEND)return;
-  try{const d=await(await fetch(api('/api/tasks'),{cache:'no-store'})).json();const box=document.getElementById('tasks');box.innerHTML='';
-    if(!d.tasks||!d.tasks.length){box.innerHTML='<div class="muted" style="padding:8px 6px">暂无任务</div>';return}
-    d.tasks.forEach(t=>{const c=el('tk',null,box);c.innerHTML='<div class="t">'+esc(t.tag)+' '+badge(t.state)+'</div><div class="s muted">job '+esc(t.jid||'—')+'</div>'+(t.effect?'<div class="e">'+esc(t.effect)+'</div>':'')})
-  }catch(e){}}
-async function cancelJob(jid){if(!confirm('确定取消作业 '+jid+'?'))return;
-  try{const r=await(await fetch(api('/api/cancel?jid='+jid))).json();alert(r.ok?('已取消 '+jid):('失败:'+(r.err||r.msg)))}catch(e){alert('取消请求失败')}
-  loadStatus()}
-async function jobDetail(jid,cell){
-  if(cell.dataset.open){cell.dataset.open='';const p=cell.querySelector('pre');if(p)p.remove();return}
-  try{const r=await(await fetch(api('/api/job?jid='+jid))).json();const pre=document.createElement('pre');pre.className='detail';pre.textContent=r.detail||'(无)';cell.appendChild(pre);cell.dataset.open='1'}catch(e){}}
-async function loadStatus(){if(!BACKEND)return;const pane=document.getElementById('pane-status');
-  try{const d=await(await fetch(api('/api/status'),{cache:'no-store'})).json();
-    let h='<button class="refresh" onclick="loadStatus()">↻ 刷新</button>';
-    const b=d.babel||{};h+='<div class="card"><h3>Babel GPU · 空 '+(b.avail||0)+' / 共 '+(b.total||0)+'</h3>';
-    const bt=b.by_type||{};Object.keys(bt).forEach(k=>{const v=bt[k];const pct=v.total?Math.round((v.total-v.avail)/v.total*100):0;const col=v.avail>0?'#3fb950':'#f85149';
-      h+='<div class="grow"><span class="gname">'+k+'</span><span class="gbar"><span class="gfill" style="width:'+pct+'%;background:'+(v.avail>0?'#2f6feb':'#555')+'"></span></span><span class="gnum" style="color:'+col+'">空 '+v.avail+' / '+v.total+(v.down?' 坏'+v.down:'')+'</span></div>'});
-    h+='</div>';
-    const sh=d.shap||{};h+='<div class="card"><h3>shap(UW)</h3>';['shap0','shap1'].forEach(k=>{const ok=sh[k]&&sh[k].reachable;h+='<div class="grow"><span class="gname">'+k+'</span><span>'+(ok?'<span class="badge b-run">可连</span>':'<span class="badge b-other">连不上</span>')+'</span></div>'});h+='</div>';
-    const js=d.jobs||[];h+='<div class="card"><h3>我的作业('+js.length+')</h3>';
-    if(js.length){h+='<table><tr><th>job</th><th>名</th><th>状态</th><th>时长</th><th>卡</th><th></th></tr>';
-      js.forEach(j=>{h+='<tr><td><span class="ibtn" onclick="jobDetail(\''+j.id+'\',this.parentElement)">'+j.id+'</span></td><td>'+esc(j.name)+'</td><td>'+badge(j.state)+'</td><td>'+esc(j.time)+'</td><td>'+esc(j.gpu||'')+'</td><td><span class="xbtn" onclick="cancelJob(\''+j.id+'\')">取消</span></td></tr>'});
-      h+='</table>'}else{h+='<div class="muted">队列里没有作业</div>'}
-    h+='</div><div class="muted">更新于 '+new Date((d.ts||0)*1000).toLocaleTimeString()+'</div>';pane.innerHTML=h
-  }catch(e){pane.innerHTML='<button class="refresh" onclick="loadStatus()">↻ 刷新</button><div class="msg err">拿状态失败(后端可能在换地址)</div>'}}
-async function loadReports(){if(!BACKEND)return;const pane=document.getElementById('pane-reports');
-  try{const d=await(await fetch(api('/api/reports'),{cache:'no-store'})).json();let h='<button class="refresh" onclick="loadReports()">↻ 刷新</button>';
-    (d.reports||[]).forEach(rp=>{h+='<div class="card"><h3>'+esc(rp.name)+'</h3><pre class="detail">'+esc(rp.text)+'</pre></div>'});
-    if(!(d.reports||[]).length)h+='<div class="muted">暂无报告</div>';pane.innerHTML=h
-  }catch(e){pane.innerHTML='<div class="msg err">拿报告失败</div>'}}
-async function loadTodos(){if(!BACKEND)return;const box=document.getElementById('todo-list');
-  try{const d=await(await fetch(api('/api/todos'),{cache:'no-store'})).json();box.innerHTML='';
-    if(!d.todos||!d.todos.length){box.innerHTML='<div class="muted">还没有待办。上面加一条,或在"对话"里跟我说"记一下…"</div>'}
-    (d.todos||[]).forEach(t=>{const r=el('todoitem',null,box);r.innerHTML='<span class="chk'+(t.done?' on':'')+'">'+(t.done?'✓':'')+'</span><span class="ttext'+(t.done?' done':'')+'">'+esc(t.text)+'</span><span class="del">✕</span>';
-      r.querySelector('.chk').onclick=()=>toggleTodo(t.id);r.querySelector('.del').onclick=()=>delTodo(t.id)});
-    loadMail();
-  }catch(e){box.innerHTML='<div class="msg err">拿待办失败</div>'}}
-async function addTodo(){const inp=document.getElementById('todo-in');const t=inp.value.trim();if(!t||!BACKEND)return;inp.value='';try{await fetch(api('/api/todo/add?text='+encodeURIComponent(t)))}catch(e){}loadTodos()}
-async function toggleTodo(id){try{await fetch(api('/api/todo/toggle?id='+id))}catch(e){}loadTodos()}
-async function delTodo(id){try{await fetch(api('/api/todo/del?id='+id))}catch(e){}loadTodos()}
-async function loadMail(){const box=document.getElementById('mail-list');if(!box||!BACKEND)return;
-  try{const d=await(await fetch(api('/api/mail'),{cache:'no-store'})).json();
-    box.innerHTML=(d.lines||[]).slice().reverse().map(l=>'<div style="font-size:12px;padding:3px 0;border-bottom:1px solid #1c2230;color:#9aa6b5">'+esc(l)+'</div>').join('')||'<span class="muted">无</span>'}catch(e){}}
-const HCOL={ok:'#3fb950',warn:'#e3b341',down:'#f85149'};
-async function loadHealth(){if(!BACKEND)return;
-  try{const d=await(await fetch(api('/api/health'),{cache:'no-store'})).json();const cs=d.components||[];
-    document.getElementById('hstrip').innerHTML=cs.map(c=>'<span class="hd" title="'+esc(c.name+': '+c.detail)+'"><span class="hdot" style="color:'+HCOL[c.status]+';background:'+HCOL[c.status]+'"></span>'+esc(c.name.replace('实验 ','').replace(' 集群',''))+'</span>').join('');
-    const pane=document.getElementById('pane-over');if(pane){
-      let h='<button class="refresh" onclick="loadHealth()">↻ 刷新</button>';
-      h+='<div class="card" style="text-align:center"><div class="ov" style="color:'+(d.ok?'#3fb950':'#f85149')+'">'+(d.ok?'系统正常':d.issues+' 项有问题')+'</div><div class="muted">共 '+cs.length+' 个组件</div></div>';
-      h+='<div class="card"><h3>各组件状态</h3>';
-      cs.forEach(c=>{h+='<div class="hrow"><span class="hdot" style="color:'+HCOL[c.status]+';background:'+HCOL[c.status]+'"></span><span class="hname">'+esc(c.name)+'</span><span class="hdet">'+esc(c.detail)+'</span></div>'});
-      h+='</div>';pane.innerHTML=h}
-  }catch(e){}}
 
-// 导航 + 移动抽屉
+// ===== 待办 / 邮件 =====
+async function loadTodos(){if(!BACKEND)return;const box=document.getElementById('todo-list');
+  try{const d=await j('/api/todos');box.innerHTML='';
+    if(!d.todos||!d.todos.length)box.innerHTML='<div class="mut">还没有待办。上面加一条,或在"对话"里说"记一下…"</div>';
+    (d.todos||[]).forEach(t=>{const r=el('row',null,box);r.innerHTML='<span class="chk'+(t.done?' on':'')+'">'+(t.done?'✓':'')+'</span><span class="ttext'+(t.done?' done':'')+'">'+esc(t.text)+'</span><span class="xbtn">删</span>';
+      r.querySelector('.chk').onclick=()=>tg(t.id);r.querySelector('.xbtn').onclick=()=>dl(t.id)})
+  }catch(e){box.innerHTML='<div class="msg err">拿待办失败</div>'}}
+async function addTodo(){const i=document.getElementById('todo-in');const t=i.value.trim();if(!t||!BACKEND)return;i.value='';try{await j('/api/todo/add?text='+encodeURIComponent(t))}catch(e){}loadTodos()}
+async function tg(id){try{await j('/api/todo/toggle?id='+id)}catch(e){}loadTodos()}
+async function dl(id){try{await j('/api/todo/del?id='+id)}catch(e){}loadTodos()}
+async function loadMail(){const box=document.getElementById('mail-list');if(!box||!BACKEND)return;
+  try{const d=await j('/api/mail');box.innerHTML=(d.lines||[]).slice().reverse().map(l=>'<div class="li" style="font-size:12.5px;color:#aeb8c8">'+esc(l)+'</div>').join('')||'<span class="mut">无</span>'}catch(e){}}
+
+// ===== 服务器 / 算力(含健康详情)=====
+async function cancelJob(jid){if(!confirm('确定取消作业 '+jid+'?'))return;try{const r=await j('/api/cancel?jid='+jid);alert(r.ok?'已取消 '+jid:'失败')}catch(e){alert('取消失败')}loadServer()}
+async function jobDetail(jid,cell){if(cell.dataset.open){cell.dataset.open='';const p=cell.querySelector('pre');if(p)p.remove();return}
+  try{const r=await j('/api/job?jid='+jid);const pre=document.createElement('pre');pre.className='detail';pre.textContent=r.detail||'(无)';cell.appendChild(pre);cell.dataset.open='1'}catch(e){}}
+async function loadServer(){if(!BACKEND)return;const pane=document.getElementById('pane-server');
+  try{const [st,h]=await Promise.all([j('/api/status'),j('/api/health')]);
+    let x='<h2 class="title">服务器 / 算力 <span class="sub">实时;点作业号看详情、点"取消"停作业</span></h2><button class="refresh" onclick="loadServer()">↻ 刷新</button>';
+    x+='<div class="card"><h3>系统健康 '+(h.ok?'<span class="pill p-ok">全部正常</span>':'<span class="pill p-bad">'+h.issues+' 项有问题</span>')+'</h3>';
+    (h.components||[]).forEach(c=>{x+='<div class="row"><span class="dot" style="color:'+HCOL[c.status]+';background:'+HCOL[c.status]+'"></span><span class="nm" style="font-weight:600">'+esc(c.name.startsWith('实验 ')?'实验 '+expLabel(c.name.slice(3)):c.name)+'</span><span class="det">'+esc(c.detail)+'</span></div>'});x+='</div>';
+    const b=st.babel||{};x+='<div class="card"><h3>Babel GPU · 空 '+(b.avail||0)+' / 共 '+(b.total||0)+'</h3>';
+    const bt=b.by_type||{};Object.keys(bt).forEach(k=>{const v=bt[k];const pct=v.total?Math.round((v.total-v.avail)/v.total*100):0;x+='<div class="row"><span class="nm" style="min-width:110px">'+k+'</span><span class="bar" style="flex:1"><span class="fill" style="width:'+pct+'%;background:'+(v.avail>0?'linear-gradient(90deg,var(--acc),var(--acc2))':'#3a4454')+'"></span></span><span class="det" style="min-width:92px;text-align:right;color:'+(v.avail>0?'var(--ok)':'var(--mut)')+'">空 '+v.avail+' / '+v.total+'</span></div>'});x+='</div>';
+    const js=st.jobs||[];x+='<div class="card"><h3>我的作业('+js.length+')</h3>';
+    if(js.length){x+='<table><tr><th>job</th><th>名</th><th>状态</th><th>时长</th><th></th></tr>';js.forEach(jb=>{x+='<tr><td><span style="cursor:pointer;color:var(--acc2)" onclick="jobDetail(\''+jb.id+'\',this.parentElement)">'+jb.id+'</span></td><td>'+esc(jb.name)+'</td><td><span class="pill '+(jb.state==='RUNNING'?'p-ok':jb.state==='PENDING'?'p-warn':'p-mut')+'">'+esc(jb.state)+'</span></td><td class="det">'+esc(jb.time)+'</td><td><span class="xbtn" onclick="cancelJob(\''+jb.id+'\')">取消</span></td></tr>'});x+='</table>'}else x+='<div class="mut">队列里没有作业</div>';
+    x+='</div>';pane.innerHTML=x
+  }catch(e){pane.innerHTML='<div class="msg err">拿服务器状态失败,稍候重试</div>'}}
+async function loadReports(){if(!BACKEND)return;const pane=document.getElementById('pane-reports');
+  try{const d=await j('/api/reports');let x='<h2 class="title">报告 <span class="sub">循环定期写的执行报告</span></h2><button class="refresh" onclick="loadReports()">↻ 刷新</button>';
+    (d.reports||[]).forEach(r=>{x+='<div class="card"><h3>'+esc(r.name)+'</h3><pre class="detail">'+esc(r.text)+'</pre></div>'});
+    if(!(d.reports||[]).length)x+='<div class="mut">暂无报告</div>';pane.innerHTML=x
+  }catch(e){pane.innerHTML='<div class="msg err">拿报告失败</div>'}}
+
+// ===== 导航 + 抽屉 =====
 const side=document.getElementById('side'),backdrop=document.getElementById('backdrop');
 function closeDrawer(){side.classList.remove('open');backdrop.classList.remove('show')}
 document.getElementById('ham').onclick=()=>{side.classList.toggle('open');backdrop.classList.toggle('show')};
@@ -219,12 +252,11 @@ backdrop.onclick=closeDrawer;
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
   const v=b.dataset.v;document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.getElementById('v-'+v).classList.add('on');
-  if(v==='over')loadHealth();if(v==='status')loadStatus();if(v==='reports')loadReports();if(v==='todo')loadTodos();closeDrawer()});
+  ({dash:loadDash,todo:loadTodos,mail:loadMail,server:loadServer,reports:loadReports}[v]||(()=>{}))();closeDrawer()});
 
 (async()=>{await resolveBackend();makeChat('log-main','box-main','send-main','main');makeChat('log-fix','box-fix','send-fix','maintain');
   document.getElementById('todo-in').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addTodo()}});
-  loadTasks();setInterval(loadTasks,15000);
-  loadHealth();setInterval(loadHealth,20000); // 系统健康:侧栏小圆点+总览,一眼看哪个有问题
-  setInterval(resolveBackend,25000); // 连接自愈:断了自动恢复、隧道地址变了自动跟上
+  loadDash();setInterval(()=>{if(document.getElementById('v-dash').classList.contains('on'))loadDash()},20000);
+  setInterval(resolveBackend,25000);
 })();
 </script></body></html>
