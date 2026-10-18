@@ -193,7 +193,7 @@ function makeChat(logId,boxId,sendId,mode){
   (function loadHist(){try{const a=JSON.parse(localStorage.getItem(HKEY)||'[]');if(!a.length)return;a.forEach(m=>el('msg '+(m.r==='u'?'user':'bot'),m.t,log));el('sys','— 以上为历史记录,新消息在下方 —',log);log.scrollTop=log.scrollHeight}catch(e){}})();
   function stream(msg,bot,attempt){let full='',wd=null;
     const es=new EventSource(api('/api/stream?mode='+mode+'&msg='+encodeURIComponent(msg)));
-    const arm=()=>{clearTimeout(wd);wd=setTimeout(()=>{es.close();onfail(msg,bot,full,attempt)},150000)};arm();
+    const arm=()=>{clearTimeout(wd);wd=setTimeout(()=>{es.close();onfail(msg,bot,full,attempt)},240000)};arm();
     es.addEventListener('text',e=>{full+=JSON.parse(e.data);bot.textContent=full;bot.className='msg bot';log.scrollTop=log.scrollHeight;arm()});
     es.addEventListener('tool',e=>{el('msg tool','⚙ '+JSON.parse(e.data),log);log.scrollTop=log.scrollHeight;arm()});
     es.addEventListener('done',e=>{clearTimeout(wd);const d=JSON.parse(e.data);if(d.result)bot.textContent=d.result;bot.className='msg bot';if(d.cost){el('cost','≈$'+Number(d.cost).toFixed(3),bot)}saveHist();es.close();done()});
